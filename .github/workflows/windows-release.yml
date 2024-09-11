@@ -42,25 +42,23 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts
-          path: target/release/
+          name: rust-python-windows
+          path: target/x86_64-pc-windows-msvc/release/rust-python.exe
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest # Use Linux for the GitHub release steps
+
+    steps:
+      - name: Download release binary
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-python-windows
+
+      # Create a release and upload the binary
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rust-python.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/release/rust-python.exe
-          asset_name: rust-python.exe
-          asset_content_type: application/octet-stream
