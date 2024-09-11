@@ -63,19 +63,27 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      - name: Download Linux artifacts
         uses: actions/download-artifact@v3
         with:
-          name: |
-            ubuntu-latest-binaries
-            windows-latest-binaries
-            macos-latest-binaries
+          name: ubuntu-latest-binaries
+          path: ./artifacts/linux
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-latest-binaries
+          path: ./artifacts/windows
+      - name: Download MacOS artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-latest-binaries
+          path: ./artifacts/macos
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.tag_name }}
           release_name: Release ${{ github.event.inputs.tag_name }}
-          files: artifacts/**
+          files: artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
