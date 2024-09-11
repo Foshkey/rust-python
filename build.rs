@@ -1,62 +1,47 @@
 use std::env;
 use std::fs;
-use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main() {
-    let dest_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/embedded_python.rs");
-    let mut file = fs::File::create(&dest_path).unwrap();
+    // Get the directory where Rust is building the target binary
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let python_files = get_python_files(&Path::new(env!("CARGO_MANIFEST_DIR")).join("python_app"));
-    writeln!(
-        &mut file,
-        "pub const PYTHON_APP: [(&str, &str); {}] = [",
-        python_files.len()
-    )
-    .unwrap();
+    // Define the path to your Python script
+    let python_script = "python_app/app.py"; // Adjust to your script path
 
-    for (file_path, module_name) in python_files {
-        let code = fs::read_to_string(file_path).expect("Unable to read file");
-        writeln!(&mut file, "({:?}, {:?}),", module_name, code).unwrap();
-    }
-    writeln!(&mut file, "];").unwrap();
-}
+    // Determine the executable extension based on the OS
+    let exe_extension = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ""
+    };
 
-fn get_python_files(dir: &Path) -> Vec<(String, String)> {
-    get_python_files_rec(dir, dir)
-}
+    // Run the PyInstaller command to build the Python script
+    let pyinstall = Command::new("pyinstaller")
+        .args([
+            "--onefile",
+            "--distpath",
+            out_dir.to_str().unwrap(), // Output to Rust's OUT_DIR
+            python_script,
+        ])
+        .status()
+        .expect("Failed to run PyInstaller");
 
-fn get_python_files_rec(dir: &Path, base: &Path) -> Vec<(String, String)> {
-    let mut files = Vec::new();
-    if !dir.is_dir() {
-        return files;
-    }
-
-    for entry in fs::read_dir(dir).expect("read_dir call failed").flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            files.extend(get_python_files_rec(&path, base));
-        } else {
-            let Some(ext) = path.extension() else {
-                continue;
-            };
-            let Some(file_name) = path.file_name() else {
-                continue;
-            };
-            if ext == "py" && file_name != "app.py" {
-                let file_path = path.to_str().unwrap().to_string();
-                let module_name = path
-                    .strip_prefix(base)
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .replace("/", ".")
-                    .replace("\\", ".")
-                    .replace(".py", "");
-                files.push((file_path, module_name));
-            }
-        }
+    if !pyinstall.success() {
+        panic!("PyInstaller build failed");
     }
 
-    files
+    // Move the Python binary to the target directory
+    let python_binary = out_dir.join(format!("app{}", exe_extension)); // Adjust for other OS
+    let target_python_binary = Path::new(&out_dir)
+        .join("../../../")
+        .join(format!("python_app{}", exe_extension));
+
+    // Ensure the target folder exists
+    fs::create_dir_all(target_python_binary.parent().unwrap()).unwrap();
+
+    // Copy the Python binary to the target directory
+    fs::copy(python_binary, target_python_binary)
+        .expect("Failed to copy Python binary to target folder");
 }
