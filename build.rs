@@ -51,6 +51,7 @@ fn get_python_files_rec(dir: &Path, base: &Path) -> Vec<(String, String)> {
                     .to_str()
                     .unwrap()
                     .replace("/", ".")
+                    .replace("\\", ".")
                     .replace(".py", "");
                 files.push((file_path, module_name));
             }
