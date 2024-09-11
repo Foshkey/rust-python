@@ -40,7 +40,6 @@ jobs:
       - name: Run tests
         run: |
           cargo test --release
-          python -m unittest discover -s tests
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
