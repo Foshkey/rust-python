@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch: # Allows manually running the workflow from the GitHub Actions tab.
+    inputs:
+      tag_name:
+        description: "Tag to create a release from"
+        required: true
+        default: "v1.0.0"
 
 jobs:
   build:
@@ -16,6 +22,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set Executable Extension
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "EXE_EXT=.exe" >> $GITHUB_ENV
+          else
+            echo "EXE_EXT=" >> $GITHUB_ENV
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
