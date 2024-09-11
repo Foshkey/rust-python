@@ -52,13 +52,12 @@ jobs:
           mkdir artifacts
           cp target/release/python_app${{ env.EXE_EXT }} artifacts/
           cp target/release/rust-python${{ env.EXE_EXT }} artifacts/
-          zip -r artifacts/${{ matrix.os }}.zip artifacts/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-binaries
-          path: ${{ matrix.os }}.zip
+          path: artifacts
 
   release:
     needs: build
@@ -68,22 +67,32 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ubuntu-latest-binaries
+          path: ./artifacts/linux/
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v3
         with:
           name: windows-latest-binaries
+          path: ./artifacts/windows/
 
       - name: Download MacOS artifacts
         uses: actions/download-artifact@v3
         with:
           name: macos-latest-binaries
+          path: ./artifacts/macos/
+
+      - name: Zip artifacts
+        run: |
+          mkdir release
+          zip -r release/linux.zip ./artifacts/linux/
+          zip -r release/windows.zip ./artifacts/windows/
+          zip -r release/macos.zip ./artifacts/macos/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.tag_name }}
           release_name: Release ${{ github.event.inputs.tag_name }}
-          files: ./artifacts/*
+          files: ./release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
