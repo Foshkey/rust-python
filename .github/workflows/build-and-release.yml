@@ -67,9 +67,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: |
-            Linux-latest-binaries
-            Windows-latest-binaries
-            macOS-latest-binaries
+            Linux-binaries
+            Windows-binaries
+            macOS-binaries
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
